@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.icia.mapper.CommunityMapper">
+	<select id="getCommunityList"
+		resultType="kr.icia.domain.CommunityTableVO">
+
+		select * from Community_table order by Community_bno DESC
+
+	</select>
+
+	<!--검색기능  -->
+	
+	
+	
+	<insert id="insert">
+	
+	<![CDATA[ 
+		insert into
+		Community_table
+		(community_bno,community_thema,community_id,community_review,gdsImg,gdsThumbImg,link1,link2,link3,link4,link5,community_admin)
+		values
+		(community_bno.nextval,#{community_thema},#{community_id},#{community_review},#{gdsImg},#{gdsThumbImg},#{link1},#{link2},#{link3},#{link4},#{link5},#{community_admin})
+		]]>
+	</insert>
+
+
+	<insert id="insertSelectKey">
+		<selectKey keyProperty="community_bno" order="BEFORE"
+			resultType="long">
+			select Community_bno.nextval from dual
+		</selectKey>
+		insert into
+		Community_table
+		(community_bno,community_thema,community_id,community_review,gdsImg,gdsThumbImg,link1,link2,link3,link4,link5,community_admin)
+		values
+		(#{community_bno},#{community_thema},#{community_id},#{community_review},#{gdsImg},#{gdsThumbImg},#{link1},#{link2},#{link3},#{link4},#{link5},#{community_admin})
+	</insert>
+
+	<!-- 상품 목록 -->
+	<select id="getCommunityViewList"
+		resultType="kr.icia.domain.CommunityTableVO">
+		select * from Community_table where community_bno =
+		#{community_bno}
+	</select>
+
+
+	<!-- 상품 수정 -->
+	<update id="communityModify">
+		update Community_table
+		set
+		community_thema =
+		#{community_thema},
+		community_id = #{community_id},
+		community_good =
+		#{community_good},
+		community_review = #{community_review},
+		community_viewcount = #{community_viewcount},
+		gdsImg = #{gdsImg},
+		gdsThumbImg =#{gdsThumbImg},
+		link1=#{link1},
+		link2=#{link2},
+		link3=#{link3},
+		link4=#{link4},
+		link5=#{link5},
+		community_admin=#{community_admin}
+		where community_bno =
+		${community_bno}
+	</update>
+
+	<!-- 상품 삭제 -->
+	<delete id="communityDelete">
+		delete from Community_table where community_bno = #{community_bno}
+	</delete>
+
+
+	<delete id="deleteAll">
+		delete from community_reply where community_bno =#{community_bno}
+	</delete>
+	
+	<delete id="deleteLike">
+	
+		delete from CommunityLike where community_bno =#{community_bno}
+	</delete>
+
+
+	<!-- 조회수 -->
+	<update id="updateViewCnt">
+		update Community_table
+		set
+		community_viewcount =
+		community_viewcount + 1
+		where community_bno = #{community_bno}
+	</update>
+
+
+
+	<!-- 커뮤니티 소감(댓글) 작성 -->
+	<insert id="registReply">
+		insert into community_reply (community_bno, user_id,
+		repNum,
+		repCon)
+		values (#{community_bno}, #{user_id},
+		community_reply_seq.nextval,
+		#{repCon})
+	</insert>
+	<!--커뮤니티 소감(댓글) 불러오기 -->
+	<select id="replyList"
+		resultType="kr.icia.domain.CommunityReplyVO">
+		select
+		r.community_bno, r.user_id, r.repNum, r.repCon,
+		r.repDate, m.user_name
+		from community_reply r
+		inner join tbl_user m
+		on
+		r.user_id = m.user_id
+		where community_bno = #{community_bno}
+	</select>
+
+	<!-- 상품 소감(댓글) 삭제 -->
+	<delete id="deleteReply">
+		delete community_reply where repNum = #{repNum} and
+		user_id= #{user_id}
+	</delete>
+
+	<!-- 아이디 체크 -->
+	<select id="replyUserIdCheck" resultType="String">
+		select user_id from
+		community_reply where repNum = #{repNum}
+	</select>
+
+	<!-- 상품 소감(댓글) 수정 -->
+	<update id="modifyReply">
+		update community_reply set repCon = #{repCon} where
+		repNum = #{repNum} and user_id = #{user_id}
+	</update>
+		
+
+
+
+
+
+
+        <!--좋아요 기능  -->
+	<insert id="createBoardLike">
+            INSERT INTO CommunityLike (community_bno, user_id)
+            VALUES (#{community_bno}, #{user_id})
+    </insert>
+
+    <delete id="deleteBoardLike">
+            DELETE FROM CommunityLike
+            WHERE community_bno = #{community_bno} AND user_id = #{user_id}
+    </delete>
+
+    <select id="updateBoardLike" resultType="kr.icia.domain.CommunityLikeVO">
+            UPDATE Community_table
+            SET
+            community_good = (SELECT COUNT(*)
+            FROM CommunityLike
+            WHERE community_bno = #{community_bno})
+            WHERE community_bno = #{community_bno}
+    </select>
+
+    <select id="getBoardLike" resultType="int">
+            SELECT COUNT(community_good) FROM Community_table WHERE community_bno = #{community_bno}
+    </select>
+<!--마이페이지 커뮤 글 확인  -->
+	
+	<select id="myUserIdCheck" resultType="kr.icia.domain.myCommunityVO">
+		select * from
+		Community_table where Community_id = #{user_name}
+	</select>
+
+</mapper>
+

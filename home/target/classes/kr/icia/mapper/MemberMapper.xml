@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.icia.mapper.MemberMapper">
+
+	<!-- 로그인 -->
+	<select id="login" resultType="kr.icia.domain.UserVO">
+		select
+		user_id,user_pw,user_name,user_birth,user_email,user_phone,addr1,addr2,addr3,regdate,updatedate,verify,enabled
+		from
+		tbl_user
+		where user_id = #{user_id}
+	</select>
+
+
+	<!-- 회원가입 -->
+	<insert id="insert">
+		insert into
+		tbl_user(user_id,user_pw,user_name,user_birth,user_email,user_phone,addr1,addr2,addr3)
+		values(#{user_id},#{user_pw},#{user_name},#{user_birth},#{user_email},#{user_phone},#{addr1},#{addr2},#{addr3})
+	</insert>
+
+	<!-- 회원목록 -->
+	<select id="memberList" resultType="kr.icia.domain.UserVO">
+		select user_id as user_id,
+		user_name as user_name,
+		user_email as user_email,addr1 as addr1,addr2
+		as addr2,addr3 as addr3,
+		regdate as regdate
+		from tbl_user order by
+		user_name
+	</select>
+
+	<!-- 회원정보 상세조회 -->
+	<select id="viewMember" resultType="kr.icia.domain.UserVO">
+		select user_id as user_id,
+		user_name as user_name,user_email as user_email,user_phone as
+		user_phone,addr1 as addr1,addr2
+		as addr2,addr3 as addr3,regdate as
+		regdate,updatedate as updatedate
+		from tbl_user where user_id
+		=#{user_id}
+	</select>
+
+	<!-- (관리자)회원정보 수정처리 -->
+	<update id="updateMember">
+		update tbl_user set
+		user_name=#{user_name},user_email=#{user_email},addr1=#{addr1},addr2=#{addr2},addr3=#{addr3}
+		where user_id=#{user_id}
+	</update>
+
+	<!-- 회원정보 삭제 처리 -->
+	<delete id="deleteMember">
+		delete from tbl_user where user_id =#{user_id}
+	</delete>
+
+	<!-- 로그인-암호화 적용 -->
+	<select id="loginBcrypt" resultType="kr.icia.domain.UserVO">
+		select
+		user_id,user_name,user_pw from tbl_user where user_id =#{user_id}
+	</select>
+
+	<!-- 아이디확인 -->
+	<select id="idCheck" resultType="kr.icia.domain.UserVO">
+		select user_id from tbl_user
+		where user_id = #{user_id}
+	</select>
+
+	<!-- 이메일확인 -->
+	<select id="emailCheck" resultType="kr.icia.domain.UserVO">
+		select user_email from
+		tbl_user
+		where user_email = #{user_email}
+	</select>
+
+
+	<!-- 아이디 찾기 -->
+	<select id="find_id" parameterType="String" resultType="String">
+		select
+		user_id from tbl_user where user_email = #{user_email}
+	</select>
+
+	<!-- (사용자)회원정보 수정 -->
+	<update id="update_mypage">
+		update tbl_user set
+		user_name=#{user_name},user_email=#{user_email},user_phone=#{user_phone},addr1=#{addr1},addr2=#{addr2},addr3=#{addr3}
+		where user_id=#{user_id}
+	</update>
+
+	<!-- 비밀번호 변경 -->
+	<update id="update_pw">
+		update tbl_user set user_pw =#{user_pw} where
+		user_id= #{user_id}
+	</update>
+
+	<!-- 비밀번호 찾기 -->
+	<update id="changePw">
+		update tbl_user set user_pw =#{user_pw} where
+		user_id= #{user_id}
+	</update>
+
+	<!-- 회원탈퇴 -->
+	<delete id="withdrawal">
+		delete from tbl_user where user_id=#{user_id}
+	</delete>
+	<!-- 모든 유저의 주문 목록 -->
+	<select id="orderList" resultType="kr.icia.domain.OrderVO">
+		select orderId, user_id,
+		orderRec,
+		userAddr1, userAddr2, userAddr3,
+		orderPhon, amount, orderDate,
+		delivery
+		from tbl_order
+	</select>
+
+	<!-- 특정 주문 목록 -->
+	<select id="orderView" resultType="kr.icia.domain.OrderListVO">
+		select
+		o.orderId, o.user_id,
+		o.orderRec,
+		o.userAddr1, o.userAddr2, o.userAddr3,
+		o.orderPhon,
+		o.amount, o.orderDate, o.delivery,
+		d.orderDetailsNum, d.proNo,
+		d.cartStock,
+		g.proName, g.img, g.price
+		from tbl_order o
+		inner join
+		tbl_order_details d
+		on o.orderId = d.orderId
+		inner join store_new g
+		on
+		d.proNo = g.proNo
+		where o.orderId = #{orderId}
+	</select>
+
+	<!-- 배송 상태 -->
+	<update id="delivery">
+		update tbl_order
+		set delivery = #{delivery}
+		where
+		orderId = #{orderId}
+
+	</update>
+	<!-- 상품 수량 조절 -->
+	<update id="changeStock">
+		update store_new
+		set stock = stock - #{stock}
+		where
+		proNo = #{proNo}
+	</update>
+</mapper>
+

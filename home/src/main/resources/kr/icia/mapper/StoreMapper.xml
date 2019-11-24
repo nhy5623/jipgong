@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.icia.mapper.StoreMapper">
+	<select id="getList" resultType="kr.icia.domain.StoreVO">
+		select *
+		from store_new
+		order by
+		proNo desc
+	</select>
+	<select id="category" resultType="kr.icia.domain.CategoryVO">
+		select
+		level, cateName,
+		cateCode, cateCodeRef
+		from store_category
+		start with cateCodeRef is null
+		connect by prior cateCode=cateCodeRef
+	</select>
+	<insert id="insertSelectKey">
+		<selectKey keyProperty="proNo" order="BEFORE"
+			resultType="int">
+			select store_new_prono.nextval from dual
+		</selectKey>
+		insert into store_new(proNo ,proName ,cateCode ,price ,stock
+		,des,img,ThumbImg)
+		values
+		(store_new_prono.nextval,#{proName},#{cateCode},#{price},#{stock},#{des},#{img},#{ThumbImg})
+	</insert>
+	<!-- <select id="read" resultType="kr.icia.domain.StoreVO"> select * from 
+		store_new where proNo=#{proNo} </select> -->
+	<!-- 상품 조회 + 카테고리 조인 -->
+	<select id="read" resultType="kr.icia.domain.StoreViewVO">
+		select
+		g.proNo, g.proName,
+		g.cateCode, c.cateCodeRef, c.cateName, price, stock, des,img,
+		upload_date
+		from store_new g
+		inner join store_category c
+		on
+		g.cateCode =
+		c.cateCode where g.proNo = #{proNo}
+	</select>
+	<select id="getTableWithPaging"
+		resultType="kr.icia.domain.StoreVO">  
+	<![CDATA[  
+	select proNo, proName, cateCode, price, stock, des, img, upload_date
+	from  (select /*INDEX_DESC(store_new store_new_pk) */   rownum rn, proNo ,proName ,cateCode ,price ,stock ,des ,img, upload_date
+	from store_new  
+	 where cateCode=101 and
+	]]>
+		<include refid="criteria" />
+	<![CDATA[
+	rownum <= #{pageNum} * #{amount})   
+	where rn > (#{pageNum}-1) * #{amount}  
+	]]>
+
+	</select>
+	<select id="tablRead" resultType="kr.icia.domain.StoreVO">
+		select * from store_new where
+		cateCode=101,102
+	</select>
+	<select id="chairRead" resultType="kr.icia.domain.StoreVO">
+		select * from store_new where
+		cateCode=#{"의자"}
+	</select>
+	<select id="closetRead" resultType="kr.icia.domain.StoreVO">
+		select * from store_new where
+		cateCode=#{"수납장"}
+	</select>
+	<select id="itemRead" resultType="kr.icia.domain.StoreVO">
+		select * from store_new where
+		cateCode=#{"소품"}
+	</select>
+	<select id="lightRead" resultType="kr.icia.domain.StoreVO">
+		select * from store_new where
+		cateCode=#{"조명"}
+	</select>
+	<select id="beddingRead" resultType="kr.icia.domain.StoreVO">
+		select * from store_new
+		where
+		cateCode=#{"침구류"}
+	</select>
+	<delete id="delete">
+		delete store_new where proNo=#{proNo}
+	</delete>
+	<update id="update">
+		update store_new
+		set
+		proName=#{proName},
+		cateCode=#{cateCode},
+		price=#{price},
+		stock=#{stock},
+		des=#{des},
+		img =
+		#{img}
+		where
+		proNo=#{proNo}
+	</update>
+	<!-- 상품 수정 -->
+
+	<sql id="criteria">
+		<trim prefix="(" suffix=") AND " prefixOverrides="OR">
+			<foreach item="type" collection="typeArr">
+				<trim prefix="OR">
+					<choose>
+						<when test="type=='T'.toString()">
+							proName like '%'||#{keyword}||'%'
+						</when>
+						<when test="type=='C'.toString()">
+							cateCode like '%'||#{keyword}||'%'
+						</when>
+						<when test="type=='W'.toString()">
+							upload_date like '%'||#{keyword}||'%'
+						</when>
+					</choose>
+				</trim>
+			</foreach>
+		</trim>
+	</sql>
+	<select id="getListWithPaging"
+		resultType="kr.icia.domain.StoreVO">  
+	<![CDATA[  
+	select proNo, proName, cateCode, price, stock, des, img, upload_date
+	from  (select /*INDEX_DESC(store_new store_new_pk) */   rownum rn, proNo ,proName ,cateCode ,price ,stock ,des ,img, upload_date
+	from store_new  
+	where 
+	]]>
+		<include refid="criteria" />
+	<![CDATA[
+	rownum <= #{pageNum} * #{amount})   
+	where rn > (#{pageNum}-1) * #{amount}  
+	]]>
+	</select>
+	<select id="getTotalCount" resultType="int">
+
+		select count(proNo) from store_new where
+		<include refid="criteria" />
+	<![CDATA[
+	proNo > 0  
+	]]>
+	</select>
+
+	<!-- 카트 담기 -->
+	<insert id="addCart">
+		insert into store_cart (cartNum, user_id, proNo,
+		cartStock)
+		values (store_cart_seq.nextval, #{user_id}, #{proNo},
+		#{cartStock})
+	</insert>
+
+	<!-- 카트 리스트 -->
+	<select id="cartList" resultType="kr.icia.domain.CartListVO">
+		select
+		row_number() over(order
+		by c.cartNum desc) as num,
+		c.cartNum, c.user_id, c.proNo, c.cartStock,
+		c.addDate,
+		g.proName, g.price, g.img
+		from store_cart c
+		inner join
+		store_new g
+		on c.proNo = g.proNo
+		where c.user_id = #{user_id}
+	</select>
+	<!-- 카트 삭제 -->
+	<delete id="deleteCart">
+		delete store_cart where cartNum =#{cartNum} and
+		user_id =#{user_id}
+	</delete>
+
+	<!-- 주문 정보 -->
+	<insert id="orderInfo">
+		insert into
+		tbl_order(orderId,user_id,orderRec,userAddr1,userAddr2,userAddr3,orderPhon,amount)
+		values
+		(#{orderId},#{user_id},#{orderRec},#{userAddr1},#{userAddr2},#{userAddr3},#{orderPhon},#{amount})
+	</insert>
+
+	<!-- 주문 상세 정보 -->
+	<insert id="orderInfo_Details">
+		insert into
+		tbl_order_details(orderDetailsNum,orderId,proNo,cartStock)
+		(select
+		tbl_order_details_seq.nextval,#{orderId},proNo,cartStock from
+		store_cart where user_id = #{user_id})
+	</insert>
+
+	<!-- 카트 비우기 -->
+	<delete id="cartAllDelete">
+		delete store_cart
+		where user_id = #{user_id}
+	</delete>
+	<!-- 특정 유저의 주문 목록 -->
+	<select id="orderList" resultType="kr.icia.domain.OrderVO">
+		select
+		orderId,user_id,orderRec,userAddr1,userAddr2,userAddr3,orderPhon,amount,orderDate,delivery
+		from tbl_order where user_id = #{user_id}
+	</select>
+
+	<!-- 특정 주문 목록 -->
+	<select id="orderView" resultType="kr.icia.domain.OrderListVO">
+		select
+		o.orderId,o.user_id,o.orderRec,o.userAddr1,o.userAddr2,o.userAddr3,o.orderPhon,o.amount,o.orderDate,o.delivery,
+		d.orderDetailsNum,d.proNo,d.cartStock,
+		g.proName,g.img,g.price
+		from
+		tbl_order o
+		inner join tbl_order_details d
+		on o.orderId = d.orderId
+		inner join store_new g
+		on d.proNo = g.proNo
+		where o.user_id = #{user_id}
+		and o.orderId = #{orderId}
+	</select>
+	<!-- 상품 수량 조절 -->
+	<update id="changeStock">
+		update store_new
+		    set stock = stock - #{stock}
+		where proNo = #{proNo}
+	</update>
+</mapper>
